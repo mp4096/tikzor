@@ -1,0 +1,128 @@
+#!/usr/bin/env python3
+
+import codecs
+import sys
+import yaml
+
+
+STICK_LENGTH = 1.0
+NODE_DIAMETER = 0.8
+CONN_LENGTH = STICK_LENGTH + NODE_DIAMETER
+
+
+class Node():
+    def __init__(self, name):
+        self.name = name
+        self.parent_idx = None
+        self.children_nodes = {}
+        self.num_modes = 0
+        self.angles = None
+
+    def set_num_modes(self, n):
+        self.num_modes = n
+
+    def add_child_node(self, idx, node):
+        self.children_nodes[idx] = node
+
+    def set_parent_idx(self, idx):
+        self.parent_idx = idx
+
+    def compute_angles(self, parent_angle):
+        angle_increment = 360.0 / self.num_modes
+        if self.parent_idx is None:
+            init_angle = -180.0
+        else:
+            init_angle = (parent_angle - 180.0)
+            init_angle += angle_increment * self.parent_idx
+        self.angles = [
+            (init_angle - angle_increment * i) % 360.0
+            for i in range(self.num_modes)
+            ]
+
+    def tikz_nodes(self, location):
+        tikz_id = self.name
+
+        s = f"\\node[tensor node] ({tikz_id:s}) at ({location:s}) {{{self.name:s}}};\n"
+        for i, a in enumerate(self.angles):
+            if i != self.parent_idx:
+                s += f"\\coordinate ({tikz_id:s}-m{i + 1:d}) "
+                s += f"at ([shift=({a:g}:{CONN_LENGTH:g} cm)] {tikz_id:s});\n"
+        return s
+
+    def tikz_connections(self):
+        tikz_id = self.name
+        s = ""
+        for i in range(self.num_modes):
+            if i in self.children_nodes:
+                child = self.children_nodes[i]
+                s += f"\\draw[virtual idx] ({tikz_id:s}) -- ({child:s}) "
+                s += f"node[very near start, font=\\tiny] {{{i + 1:d}}};\n"
+            elif i != self.parent_idx:
+                s += f"\\draw[physical idx] "
+                s += f"({tikz_id:s}) -- ({tikz_id:s}-m{i + 1:d}) "
+                s += f"node[very near start, font=\\tiny] {{{i + 1:d}}};\n"
+        return s
+
+
+def collect_nodes(d, nodes):
+    if isinstance(d, dict):
+        # We're dealing with a node here, so the d.keys() is relevant
+        assert(len(d) == 1)
+        node_name = list(d.keys())[0]
+        nodes.append(Node(node_name))
+        for i, c in enumerate(d[node_name]):
+            if isinstance(c, dict):
+                nodes[-1].add_child_node(i, list(c.keys())[0])
+            elif c == "^":
+                nodes[-1].set_parent_idx(i)
+        nodes[-1].set_num_modes(len(d[node_name]))
+        for v in d.values():
+            collect_nodes(v, nodes)
+    elif isinstance(d, list):
+        # We're dealing with a list here, so these are indices
+        for e in d:
+            collect_nodes(e, nodes)
+
+
+def find_parent(nodes, node_name):
+    for n in nodes:
+        if node_name in n.children_nodes.values():
+            idx = next(
+                k for k, v in n.children_nodes.items()
+                if v == node_name
+                )
+            return n.name, idx
+    return None, None
+
+
+if __name__ == "__main__":
+    filename = sys.argv[1]
+    with codecs.open(filename, "r", encoding="utf8") as f:
+        data = yaml.safe_load(f)
+
+    nodes = []
+    collect_nodes(data, nodes)
+    nodes_dict = {n.name: n for n in nodes}
+
+    while any(n.angles is None for n in nodes):
+        for n in nodes:
+            parent_name, parent_side_idx = find_parent(nodes, n.name)
+            if parent_name is None:
+                # This is a root node
+                n.compute_angles(0.0)
+            else:
+                if not nodes_dict[parent_name].angles is None:
+                    parent_side_angle = \
+                        nodes_dict[parent_name].angles[parent_side_idx]
+                    n.compute_angles(parent_side_angle)
+
+    for v in nodes_dict.values():
+        parent_name, parent_side_idx = find_parent(nodes, v.name)
+        if parent_name is None:
+            print(v.tikz_nodes("0, 0"), "\n")
+        else:
+            parent_coord = f"{parent_name:s}-m{parent_side_idx + 1:d}"
+            print(v.tikz_nodes(parent_coord), "\n")
+
+    for v in nodes_dict.values():
+        print(v.tikz_connections(), "\n")
