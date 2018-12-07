@@ -56,11 +56,11 @@ class Node():
             if i in self.children_nodes:
                 child = self.children_nodes[i]
                 s += f"\\draw[virtual idx] ({tikz_id:s}) -- ({child:s}) "
-                s += f"node[very near start, font=\\tiny] {{{i + 1:d}}};\n"
+                s += f"node[pos = 0.1, font=\\tiny] {{{i + 1:d}}};\n"
             elif i != self.parent_idx:
                 s += f"\\draw[physical idx] "
                 s += f"({tikz_id:s}) -- ({tikz_id:s}-m{i + 1:d}) "
-                s += f"node[very near start, font=\\tiny] {{{i + 1:d}}};\n"
+                s += f"node[pos = 0.1, font=\\tiny] {{{i + 1:d}}};\n"
         return s
 
 
