@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-import codecs
 import sys
 import yaml
 
@@ -97,7 +96,7 @@ def find_parent(nodes, node_name):
 
 if __name__ == "__main__":
     filename = sys.argv[1]
-    with codecs.open(filename, "r", encoding="utf8") as f:
+    with open(filename, "r", encoding="utf8") as f:
         data = yaml.safe_load(f)
 
     nodes = []
