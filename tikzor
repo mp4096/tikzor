@@ -116,6 +116,7 @@ if __name__ == "__main__":
                         nodes_dict[parent_name].angles[parent_side_idx]
                     n.compute_angles(parent_side_angle)
 
+    print("\\begin{tikzpicture}")
     for v in nodes_dict.values():
         parent_name, parent_side_idx = find_parent(nodes, v.name)
         if parent_name is None:
@@ -126,3 +127,4 @@ if __name__ == "__main__":
 
     for v in nodes_dict.values():
         print(v.tikz_connections(), "\n")
+    print("\\end{tikzpicture}")
