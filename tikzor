@@ -54,12 +54,13 @@ class Node():
         for i in range(self.num_modes):
             if i in self.children_nodes:
                 child = self.children_nodes[i]
-                s += f"\\draw[virtual idx] ({tikz_id:s}) -- ({child:s}) "
-                s += f"node[pos = 0.1, font=\\tiny] {{{i + 1:d}}};\n"
+                s += f"\\draw[virtual idx] ({tikz_id:s}) -- ({child:s})\n"
+                s += f"  node[mode num, pos = 0.1] {{{i + 1:d}}}\n"
+                s += "  node[mode num, pos = 0.9] {};\n"
             elif i != self.parent_idx:
                 s += f"\\draw[physical idx] "
-                s += f"({tikz_id:s}) -- ({tikz_id:s}-m{i + 1:d}) "
-                s += f"node[pos = 0.1, font=\\tiny] {{{i + 1:d}}};\n"
+                s += f"({tikz_id:s}) -- ({tikz_id:s}-m{i + 1:d})\n"
+                s += f"  node[mode num, pos = 0.1] {{{i + 1:d}}};\n"
         return s
 
 
