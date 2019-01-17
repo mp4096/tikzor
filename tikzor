@@ -4,9 +4,8 @@ import sys
 import yaml
 
 
-STICK_LENGTH = 1.0
+STICK_LENGTH = 0.6
 NODE_DIAMETER = 0.8
-CONN_LENGTH = STICK_LENGTH + NODE_DIAMETER
 
 
 class Node():
@@ -43,9 +42,13 @@ class Node():
 
         s = f"\\node[tensor node] ({tikz_id:s}) at ({location:s}) {{{self.name:s}}};\n"
         for i, a in enumerate(self.angles):
+            if i in self.children_nodes:
+                length = STICK_LENGTH + NODE_DIAMETER
+            else:
+                length = STICK_LENGTH + NODE_DIAMETER / 2.0
             if i != self.parent_idx:
                 s += f"\\coordinate ({tikz_id:s}-m{i + 1:d}) "
-                s += f"at ([shift=({a:g}:{CONN_LENGTH:g} cm)] {tikz_id:s});\n"
+                s += f"at ([shift=({a:g}:{length:g} cm)] {tikz_id:s});\n"
         return s
 
     def tikz_connections(self):
